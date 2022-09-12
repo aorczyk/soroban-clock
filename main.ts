@@ -1,18 +1,39 @@
-let hours = 8;
-let minutes = 58;
+let hours = 21;
+let minutes = 37;
 let seconds = 0;
 let mode = 0;
 let clockMode = 0;
 let settingsMode = 0;
 
-let alarmHours = 8;
-let alarmMinutes = 59;
+let alarmHours = 5;
+let alarmMinutes = 30;
 let alarmStatus = false;
-let alarmOn = true;
+let alarmOn = false;
 let alarmStartTime = 0;
 let screenStatus = true;
 
-showTime(hours, minutes)
+showClock()
+
+
+let clockModeBefore = 0;
+let settingsModeBefore = 0;
+
+function modeGuard(){
+    if (mode > 3) {
+        mode = 0
+    }
+
+    if (clockMode > 2) {
+        clockMode = 0
+    }
+
+    if (settingsMode > 2 || clockModeBefore != clockMode) {
+        settingsMode = 0
+    }
+
+    clockModeBefore = clockMode;
+    settingsModeBefore = settingsMode;
+}
 
 input.onLogoEvent(TouchButtonEvent.Pressed, function() {
     if (clockMode == 0){
@@ -22,54 +43,50 @@ input.onLogoEvent(TouchButtonEvent.Pressed, function() {
     if (!screenStatus){
         basic.clearScreen()
     } else {
-        showTime(hours, minutes)
+        showClock()
     }
 })
 
 input.onButtonPressed(Button.AB, function () {
     clockMode++
-    if (clockMode > 2) {
-        clockMode = 0
-    }
+    modeGuard()
 
     if (clockMode == 1){
         settingsMode = 0;
         basic.showString("T")
         basic.clearScreen()
-        showTime(hours, minutes)
+        showClock()
     } else if (clockMode == 2) {
         settingsMode = 0;
         basic.showString("A")
         basic.clearScreen()
         showTime(alarmHours, alarmMinutes)
-    } else {
-        basic.showString("C")
+    } else if (clockMode == 3) {
         basic.clearScreen()
-        showTime(hours, minutes)
+    } else {
+        showClock()
     }
 })
 
 input.onButtonPressed(Button.A, function() {
     if (clockMode == 0){
         mode++
+        modeGuard()
 
         basic.clearScreen()
-        if (mode == 1) {
-            soroban.showNumber(seconds)
-        } else if (mode == 0){
+        if (mode == 0) {
             screenStatus = true
-            showTime(hours, minutes)
+            showClock()
+        } else if (mode == 1) {
+            soroban.showNumber(seconds)
         } else if (mode == 2) {
             showTime(alarmHours, alarmMinutes)
         } else {
-            mode = 0
-            showTime(hours, minutes)
+            basic.clearScreen()
         }
     } else if (clockMode == 1 || clockMode == 2){
         settingsMode++
-        if (settingsMode > 2) {
-            settingsMode = 0
-        }
+        modeGuard()
 
         if (settingsMode == 1) {
             basic.showString("H")
@@ -82,7 +99,7 @@ input.onButtonPressed(Button.A, function() {
         } else if (settingsMode == 0) {
             basic.showIcon(IconNames.Yes)
             basic.clearScreen()
-            showTime(hours, minutes)
+            showClock()
             clockMode = 0
         }
     }
@@ -91,9 +108,9 @@ input.onButtonPressed(Button.A, function() {
 input.onButtonPressed(Button.B, function () {
     if (alarmOn) {
         alarmOn = false
-        basic.showIcon(IconNames.Happy)
+        basic.showIcon(IconNames.Yes)
         basic.pause(1000)
-        showTime(hours, minutes)
+        showClock()
         return
     }
 
@@ -162,33 +179,35 @@ function showTime(hours: number, minutes: number){
     }
 }
 
+function showClock(){
+    showTime(hours, minutes)
+
+    if (seconds % 2) {
+        led.plot(2, 2)
+    } else {
+        led.unplot(2, 2)
+    }
+}
+
 basic.forever(function() {
     seconds += 1;
     fixTime()
 
-    if (clockMode == 0 && screenStatus){
-        if (mode == 0) {
-            if (seconds == 0){
-                showTime(hours, minutes)
+    control.inBackground(function() {
+        if (clockMode == 0 && screenStatus) {
+            if (mode == 0) {
+                showClock()
+            } else if (mode == 1) {
+                soroban.showNumber(seconds)
             }
-
-            if (seconds % 2) {
-                led.plot(2, 2)
-            } else {
-                led.unplot(2, 2)
-            }
-        } else if (mode == 1) {
-            soroban.showNumber(seconds)
         }
-    }
 
-
-
-    if (alarmStatus && alarmHours == hours && alarmMinutes == minutes && seconds == 0){
-        alarmOn = true
-        screenStatus = true
-        alarmStartTime = input.runningTime()
-    }
+        if (alarmStatus && alarmHours == hours && alarmMinutes == minutes && seconds == 0) {
+            alarmOn = true
+            screenStatus = true
+            alarmStartTime = input.runningTime()
+        }
+    })
 
     basic.pause(1000)
 })
