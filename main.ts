@@ -5,10 +5,10 @@ let mode = 0;
 let clockMode = 0;
 let settingsMode = 0;
 
-let alarmHours = 12;
-let alarmMinutes = 15;
+let alarmHours = 8;
+let alarmMinutes = 59;
 let alarmStatus = false;
-let alarmOn = false;
+let alarmOn = true;
 let alarmStartTime = 0;
 let screenStatus = true;
 
@@ -61,9 +61,6 @@ input.onButtonPressed(Button.A, function() {
             showTime(hours, minutes)
         } else if (mode == 2) {
             showTime(alarmHours, alarmMinutes)
-            if (alarmStatus){
-                led.plot(2,4)
-            }
         } else {
             mode = 0
             showTime(hours, minutes)
@@ -94,7 +91,7 @@ input.onButtonPressed(Button.A, function() {
 input.onButtonPressed(Button.B, function () {
     if (alarmOn) {
         alarmOn = false
-        basic.showIcon(IconNames.Asleep)
+        basic.showIcon(IconNames.Happy)
         basic.pause(1000)
         showTime(hours, minutes)
         return
@@ -200,7 +197,9 @@ basic.forever(function () {
     if (alarmOn){
         // music.playTone(Note.C, music.beat())
         music.playSoundEffect(music.createSoundEffect(WaveShape.Sine, 5000, 0, 120, 0, 500, SoundExpressionEffect.None, InterpolationCurve.Linear), SoundExpressionPlayMode.UntilDone)
+        led.unplot(2, 4)
         basic.pause(1000)
+        led.plot(2, 4)
 
         if (input.runningTime() - alarmStartTime > 30 * 1000){
             alarmOn = false
