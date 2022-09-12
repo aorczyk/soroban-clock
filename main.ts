@@ -1,5 +1,5 @@
-let hours = 12;
-let minutes = 17;
+let hours = 8;
+let minutes = 58;
 let seconds = 0;
 let mode = 0;
 let clockMode = 0;
@@ -13,6 +13,20 @@ let alarmStartTime = 0;
 let screenStatus = true;
 
 showTime(hours, minutes)
+
+input.onLogoEvent(TouchButtonEvent.Pressed, function() {
+    if (clockMode == 0){
+        screenStatus = !screenStatus
+    }
+
+    if (alarmOn) {
+        alarmOn = false
+    } else if (!screenStatus){
+        basic.clearScreen()
+    } else {
+        showTime(hours, minutes)
+    }
+})
 
 input.onButtonPressed(Button.AB, function () {
     clockMode++
@@ -40,9 +54,6 @@ input.onButtonPressed(Button.AB, function () {
 input.onButtonPressed(Button.A, function() {
     if (clockMode == 0){
         mode++
-        if (mode > 3) {
-            mode = 0
-        }
 
         basic.clearScreen()
         if (mode == 1) {
@@ -55,6 +66,9 @@ input.onButtonPressed(Button.A, function() {
             if (alarmStatus){
                 led.plot(2,4)
             }
+        } else {
+            mode = 0
+            showTime(hours, minutes)
         }
     } else if (clockMode == 1 || clockMode == 2){
         settingsMode++
@@ -65,18 +79,16 @@ input.onButtonPressed(Button.A, function() {
         if (settingsMode == 1) {
             basic.showString("H")
             basic.clearScreen()
+            soroban.showNumber(clockMode == 1 ? hours : alarmHours, Align.C2, true)
         } else if (settingsMode == 2) {
             basic.showString("M")
             basic.clearScreen()
+            soroban.showNumber(clockMode == 1 ? minutes : alarmMinutes, Align.C5, false)
         } else if (settingsMode == 0) {
             basic.showIcon(IconNames.Yes)
             basic.clearScreen()
-        }
-
-        if (clockMode == 1) {
             showTime(hours, minutes)
-        } else if (clockMode == 2) {
-            showTime(alarmHours, alarmMinutes)
+            clockMode = 0
         }
     }
 })
@@ -88,15 +100,15 @@ input.onButtonPressed(Button.B, function () {
             if (hours > 23) {
                 hours = 0;
             }
+            soroban.showNumber(hours, Align.C2, true)
         } else if (settingsMode == 2) {
             minutes += 1
             if (minutes > 59) {
                 minutes = 0;
             }
             seconds = 0
+            soroban.showNumber(minutes, Align.C5, false)
         }
-
-        showTime(hours, minutes)
     } else if (clockMode == 2){
         if (settingsMode == 1) {
             alarmHours += 1
@@ -112,16 +124,12 @@ input.onButtonPressed(Button.B, function () {
 
         showTime(alarmHours, alarmMinutes)
     } else if (clockMode == 0){
-        if (alarmOn){
-            alarmOn = false
-        } else {
-            alarmStatus = !alarmStatus
+        alarmStatus = !alarmStatus
 
-            if (alarmStatus) {
-                led.plot(2, 4)
-            } else {
-                led.unplot(2, 4)
-            }
+        if (alarmStatus) {
+            led.plot(2, 4)
+        } else {
+            led.unplot(2, 4)
         }
     }
 })
@@ -155,16 +163,27 @@ basic.forever(function() {
     seconds += 1;
     fixTime()
 
-    if (clockMode == 0){
-        if (mode == 0 && seconds == 0) {
-            showTime(hours, minutes)
+    if (clockMode == 0 && screenStatus){
+        if (mode == 0) {
+            if (seconds == 0){
+                showTime(hours, minutes)
+            }
+
+            if (seconds % 2) {
+                led.plot(2, 2)
+            } else {
+                led.unplot(2, 2)
+            }
         } else if (mode == 1) {
             soroban.showNumber(seconds)
         }
     }
 
+
+
     if (alarmStatus && alarmHours == hours && alarmMinutes == minutes && seconds == 0){
         alarmOn = true
+        screenStatus = true
         alarmStartTime = input.runningTime()
     }
 
@@ -173,26 +192,12 @@ basic.forever(function() {
 
 basic.forever(function () {
     if (alarmOn){
-        music.playTone(Note.C, music.beat())
+        // music.playTone(Note.C, music.beat())
+        music.playSoundEffect(music.createSoundEffect(WaveShape.Sine, 5000, 0, 120, 0, 500, SoundExpressionEffect.None, InterpolationCurve.Linear), SoundExpressionPlayMode.UntilDone)
         basic.pause(1000)
 
         if (input.runningTime() - alarmStartTime > 30 * 1000){
             alarmOn = false
         }
     }
-
-    // let lightLevel = input.lightLevel()
-
-    // if (screenStatus && lightLevel < 5) {
-    //     mode = 3
-    //     screenStatus = false
-    //     basic.pause(5000)
-    //     basic.clearScreen()
-    // }
-
-    // if (!screenStatus && lightLevel > 5) {
-    //     mode = 0
-    //     screenStatus = true
-    //     showTime(hours, minutes)
-    // }
 })
