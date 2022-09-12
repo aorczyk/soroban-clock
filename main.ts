@@ -19,9 +19,7 @@ input.onLogoEvent(TouchButtonEvent.Pressed, function() {
         screenStatus = !screenStatus
     }
 
-    if (alarmOn) {
-        alarmOn = false
-    } else if (!screenStatus){
+    if (!screenStatus){
         basic.clearScreen()
     } else {
         showTime(hours, minutes)
@@ -94,6 +92,14 @@ input.onButtonPressed(Button.A, function() {
 })
 
 input.onButtonPressed(Button.B, function () {
+    if (alarmOn) {
+        alarmOn = false
+        basic.showIcon(IconNames.Asleep)
+        basic.pause(1000)
+        showTime(hours, minutes)
+        return
+    }
+
     if (clockMode == 1) {
         if (settingsMode == 1) {
             hours += 1
